@@ -38,8 +38,7 @@ import CryptoKit
     
     public var akUser:AKUser? = nil
     public var accessToken:String = ""
-    public var jwt: String?
-    public var idToken: String?
+    
     
     // Configure
     @MainActor public func configure(appKeyRestAddress: String = "") {
@@ -669,6 +668,43 @@ import CryptoKit
     
     
     
+    @MainActor public func getUser(token:String? = nil) async throws -> AKUser? {
+        
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+
+        let url = "\(appKeyRestAddress)/api/authn/user"
+        
+        do {
+            
+            let config = URLSessionConfiguration.default
+            let session = URLSession(configuration: config)
+            let url = URL(string: url)!
+            
+            var urlRequest = URLRequest(url: url)
+            urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+            urlRequest.allHTTPHeaderFields = ["access-token": token ?? self.accessToken]
+            urlRequest.httpMethod = "GET"
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            
+            self.akUser = try makeUser(data)
+            
+            return self.akUser
+            
+        }
+        catch let error as AppKeyIDError {
+           
+            throw error
+        }
+        catch {
+            
+            throw error
+        }
+    }
     
     @MainActor public func scanAppKeyQR(url:String) async throws -> Bool {
         
@@ -760,12 +796,7 @@ import CryptoKit
             var user = try JSONDecoder().decode(AKUser.self, from: data)
             
             if let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
-                user.accessToken = json["access-token"] as? String
-                user.jwt = json["jwt"] as? String
-                user.idToken = json["id-token"] as? String
-                
-                self.jwt = user.jwt
-                self.idToken = user.idToken
+                user.accessToken = json["access-token"] as? String 
             }
             
             if let accessToken = user.accessToken {
@@ -786,8 +817,7 @@ import CryptoKit
         
         self.akUser = nil
         self.accessToken = ""
-        self.idToken = ""
-        self.jwt = nil
+       
     }
     
 }

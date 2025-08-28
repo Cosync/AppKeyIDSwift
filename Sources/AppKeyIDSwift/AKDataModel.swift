@@ -40,7 +40,7 @@ public struct AKSingUpUser:Codable {
     public var id:String = ""
     public var name:String = ""
     public var displayName:String = ""
-    public var handle: String = ""
+    public var email: String = ""
 }
 
 
@@ -115,7 +115,7 @@ public struct AKAuthenticationInfo:Decodable {
  
 public struct AKSignupData:Codable {
     
-    public let handle:String
+    public let email:String
     public let message:String
     public var signUpToken:String?
 }
@@ -147,14 +147,13 @@ public struct AKUser:Codable {
     public let userId:String
     public let firstName:String
     public let lastName:String
-    public let handle:String
+    public let email:String
     public let status:String
     public let authenticators:[AKPasskey]
+    public var planId:String?
     public var accessToken:String?
     public var signUpToken:String?
-    public var idToken:String?
-    public var jwt:String?
+    public let company:String?
     public let country:String?
-    public let lastLogin: String?
     
 }
