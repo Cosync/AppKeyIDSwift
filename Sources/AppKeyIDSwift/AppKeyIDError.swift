@@ -45,6 +45,7 @@ public enum AppKeyIDError: Error {
     case appleLoginNotSupported         // 415
     case googleLoginNotSupported        // 416
     case internalServerError            // 500
+    case accessTokenExpired             // 501
     case invalidLoginCredentials        // 600
     case handleAlreadyRegistered        // 601
     case invalidData                    // 602
@@ -97,6 +98,8 @@ public enum AppKeyIDError: Error {
             return "phone number already in use"
         case .internalServerError:
             return "internal server error"
+        case .accessTokenExpired:
+            return "your login session has expired"
         case .invalidLoginCredentials:
             return "invalid login credentials"
         case .handleAlreadyRegistered:
@@ -153,7 +156,7 @@ public enum AppKeyIDError: Error {
             if httpResponse.statusCode == 200 {
                 return
             }
-            else if httpResponse.statusCode == 400 {
+            else if httpResponse.statusCode >= 400 && httpResponse.statusCode < 500 {
                 if let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
                     if let code = json["code"] as? Int {
                         switch code {
@@ -194,6 +197,8 @@ public enum AppKeyIDError: Error {
                             throw AppKeyIDError.googleLoginNotSupported
                         case 500:
                             throw AppKeyIDError.internalServerError
+                        case 501:
+                            throw AppKeyIDError.accessTokenExpired
                         case 600:
                             throw AppKeyIDError.invalidLoginCredentials
                         case 601:
