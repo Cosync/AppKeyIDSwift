@@ -158,6 +158,7 @@ public enum AppKeyIDError: Error {
             }
             else if httpResponse.statusCode >= 400 && httpResponse.statusCode < 500 {
                 if let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
+                   
                     if let code = json["code"] as? Int {
                         switch code {
 

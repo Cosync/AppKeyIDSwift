@@ -23,6 +23,7 @@
 //
 
 import Foundation
+import SwiftUI
 
 
  
@@ -143,6 +144,49 @@ struct AKLoginComplete:Decodable {
 
 
  
+public struct AKUploadUrl:Codable, Sendable {
+    public let writeUrl:String
+    public let readUrl:String
+    
+    public let writeUrlSmall:String?
+    public let readUrlSmall:String?
+    
+    public let writeUrlMedium:String?
+    public let readUrlMedium:String?
+    
+    public let writeUrlLarge:String?
+    public let readUrlLarge:String?
+    
+    
+   
+}
+
+public struct Avatar:Codable {
+    public let urlOrigin:String
+    public let urlSmall:String?
+    public let urlMedium:String?
+    public let urlLarge:String?
+}
+
+
+
+public struct AKImageDetail:Codable {
+    public let fileName:String
+    public let localIdentifier:String
+    public let pixelWidth:Int
+    public let pixelHeight:Int
+    public let contentType:String
+    
+    public init( fileName: String, localIdentifier:String, pixelWidth: Int, pixelHeight:Int, contentType:String) {
+        self.fileName  = fileName
+        self.localIdentifier = localIdentifier
+        self.pixelWidth = pixelWidth
+        self.pixelHeight = pixelHeight
+        self.contentType = contentType
+    }
+}
+
+ 
 public struct AKUser:Codable {
     public let userId:String
     public let firstName:String
@@ -155,5 +199,57 @@ public struct AKUser:Codable {
     public var signUpToken:String?
     public let company:String?
     public let country:String?
+    public let avatar:Avatar?
+    public let createdAt: String?
+    public let updatedAt: String?
+}
+
+
+
+public struct AKUploadItem {
     
+    public enum MediaType {
+        case image
+        case video
+        case audio
+        case unknown
+        
+        func description() -> String {
+            switch self {
+            case .image:
+                return "image"
+            case .video:
+                return "video"
+            case .audio:
+                return "audio"
+            case .unknown:
+                return "unkown"
+            }
+        }
+    }
+    public var fileName:String?
+    public var src: String
+    var noCut: Bool = false
+    // image data
+    
+    public var uiImage:UIImage?
+    public var contentType:String?
+    public var size:Int?
+    public var mediaType: MediaType
+    public var path: String {
+        return mediaType.description()
+    }
+    
+   
+        
+    
+    public init( src: String, mediaType: AKUploadItem.MediaType, uiImage:UIImage? = nil, contentType:String = "", size:Int? = 0, noCut:Bool? = false) {
+        
+        self.src = src
+        self.mediaType = mediaType
+        self.uiImage = uiImage
+        self.contentType = contentType
+        self.size = size
+        self.noCut = noCut ?? false
+    }
 }

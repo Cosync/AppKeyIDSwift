@@ -31,7 +31,7 @@ import CryptoKit
 
 
 @available(iOS 16.0, *)
-@MainActor public class AppKeyIDAPIManager:ObservableObject {
+@MainActor public class AppKeyIDAPIManager {
     public static let shared = AppKeyIDAPIManager()
     
     public var appKeyRestAddress: String? = ""
@@ -476,6 +476,53 @@ import CryptoKit
     
     
     
+    
+    @MainActor public func updateProfileAvatar(url:String, urlSmall:String?, urlMedium:String?, urlLarge:String? ) async throws -> Bool {
+        
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+
+        let url = "\(appKeyRestAddress)/api/authn/updateProfileAvatar"
+        do {
+            
+            
+            var requestBodyComponents = URLComponents()
+            requestBodyComponents.queryItems = [
+                URLQueryItem(name: "urlOrigin", value: url),
+                URLQueryItem(name: "urlSmall", value: urlSmall),
+                URLQueryItem(name: "urlMedium", value: urlMedium),
+                URLQueryItem(name: "urlLarge", value: urlLarge)
+            ]
+            
+            
+            let config = URLSessionConfiguration.default
+            let session = URLSession(configuration: config)
+            let url = URL(string: url)!
+            
+            var urlRequest = URLRequest(url: url)
+            urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+            urlRequest.httpMethod = "POST"
+            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            
+            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            
+            return true
+        }
+        catch let error as AppKeyIDError {
+            throw error
+        }
+        catch {
+            throw error
+        }
+    }
+    
+    
+    
     @MainActor public func addPasskey() async throws -> AKSignupChallenge {
         
         guard let appKeyRestAddress = self.appKeyRestAddress else {
@@ -787,8 +834,49 @@ import CryptoKit
             throw error
         }
     }
-    
-    
+   
+    @MainActor public func getUploadURL(fileName:String, noCutting:Bool = false) async throws -> AKUploadUrl {
+        
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+
+        let url = "\(appKeyRestAddress)/api/storage/upload?fileName=\(fileName)&noCutting=\(noCutting)"
+        
+        do {
+            
+            var requestBodyComponents = URLComponents()
+            
+            let config = URLSessionConfiguration.default
+            let session = URLSession(configuration: config)
+            let url = URL(string: url)!
+            
+            var urlRequest = URLRequest(url: url)
+            urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+            urlRequest.httpMethod = "GET"
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
+            
+            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+            
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            
+            let result = try JSONDecoder().decode(AKUploadUrl.self, from: data)
+            
+            return result
+            
+        }
+        catch let error as AppKeyIDError {
+           
+            throw error
+        }
+        catch {
+            
+            throw error
+        }
+    }
     
     
     func makeUser(_ data: Data) throws -> AKUser {
