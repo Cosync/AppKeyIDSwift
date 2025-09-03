@@ -145,20 +145,21 @@ struct AKLoginComplete:Decodable {
 
  
 public struct AKUploadUrl:Codable, Sendable {
+    
+    public let id:String
+    
     public let writeUrl:String
     public let readUrl:String
+    public let path:String
     
     public let writeUrlSmall:String?
-    public let readUrlSmall:String?
+    public let pathSmall:String?
     
     public let writeUrlMedium:String?
-    public let readUrlMedium:String?
+    public let pathMedium:String?
     
     public let writeUrlLarge:String?
-    public let readUrlLarge:String?
-    
-    
-   
+    public let pathLarge:String?
 }
 
 public struct Avatar:Codable {
@@ -207,7 +208,7 @@ public struct AKUser:Codable {
 
 
 public struct AKUploadItem {
-    
+    public var id:String
     public enum MediaType {
         case image
         case video
@@ -233,7 +234,7 @@ public struct AKUploadItem {
     // image data
     
     public var uiImage:UIImage?
-    public var contentType:String?
+    public var contentType:String
     public var size:Int?
     public var mediaType: MediaType
     public var path: String {
@@ -243,8 +244,8 @@ public struct AKUploadItem {
    
         
     
-    public init( src: String, mediaType: AKUploadItem.MediaType, uiImage:UIImage? = nil, contentType:String = "", size:Int? = 0, noCut:Bool? = false) {
-        
+    public init(id:String, src: String, mediaType: AKUploadItem.MediaType, uiImage:UIImage? = nil, contentType:String = "", size:Int? = 0, noCut:Bool? = false) {
+        self.id = id
         self.src = src
         self.mediaType = mediaType
         self.uiImage = uiImage

@@ -63,7 +63,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/register"
+        let url = "\(appKeyRestAddress)/api/account/register"
         
         do {
             let moddedHandle = email.replacingOccurrences(of: "+", with: "%2B")
@@ -110,7 +110,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/registerConfirm"
+        let url = "\(appKeyRestAddress)/api/account/registerConfirm"
         do {
             let moddedHandle = email.replacingOccurrences(of: "+", with: "%2B")
             let attetstRsponse = "{\"attestationObject\": \"\(attest.response.attestationObject)\", \"clientDataJSON\": \"\(attest.response.clientDataJSON)\"}"
@@ -160,7 +160,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
         
-        let url = "\(appKeyRestAddress)/api/authn/registerComplete"
+        let url = "\(appKeyRestAddress)/api/account/registerComplete"
         
         do {
             
@@ -204,7 +204,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/login"
+        let url = "\(appKeyRestAddress)/api/account/login"
         
         do {
             // your post request data
@@ -250,7 +250,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/loginComplete"
+        let url = "\(appKeyRestAddress)/api/account/loginComplete"
         do {
             
             
@@ -300,7 +300,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/deleteAccount"
+        let url = "\(appKeyRestAddress)/api/account/deleteAccount"
         do {
              
             
@@ -336,7 +336,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/verify"
+        let url = "\(appKeyRestAddress)/api/account/verify"
         
         do {
             // your post request data
@@ -382,7 +382,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/verifyComplete"
+        let url = "\(appKeyRestAddress)/api/account/verifyComplete"
         do {
             
             
@@ -409,10 +409,7 @@ import CryptoKit
             
             
             let (data, response) = try await session.data(for: urlRequest)
-            try AppKeyIDError.checkResponse(data: data, response: response)
-            
-            
-            var user = try JSONDecoder().decode(AKUser.self, from: data)
+            try AppKeyIDError.checkResponse(data: data, response: response) 
             
             self.akUser = try makeUser(data)
             return self.akUser!
@@ -430,13 +427,13 @@ import CryptoKit
     
     
     
-    @MainActor public func updateProfile(firstName:String, lastName:String, country:String? = nil) async throws -> Bool {
+    @MainActor public func updateProfile(firstName:String, lastName:String, country:String? = nil) async throws -> AKUser {
         
         guard let appKeyRestAddress = self.appKeyRestAddress else {
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/updateProfile"
+        let url = "\(appKeyRestAddress)/api/account/updateProfile"
         do {
             
             
@@ -463,8 +460,8 @@ import CryptoKit
             
             let (data, response) = try await session.data(for: urlRequest)
             try AppKeyIDError.checkResponse(data: data, response: response)
-            
-            return true
+            self.akUser = try makeUser(data)
+            return self.akUser!
         }
         catch let error as AppKeyIDError {
             throw error
@@ -477,22 +474,22 @@ import CryptoKit
     
     
     
-    @MainActor public func updateProfileAvatar(url:String, urlSmall:String?, urlMedium:String?, urlLarge:String? ) async throws -> Bool {
+    @MainActor public func updateProfileAvatar(pathOrigin:String, pathSmall:String?, pathMedium:String?, pathLarge:String? ) async throws -> AKUser {
         
         guard let appKeyRestAddress = self.appKeyRestAddress else {
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/updateProfileAvatar"
+        let url = "\(appKeyRestAddress)/api/account/updateProfileAvatar"
         do {
             
             
             var requestBodyComponents = URLComponents()
             requestBodyComponents.queryItems = [
-                URLQueryItem(name: "urlOrigin", value: url),
-                URLQueryItem(name: "urlSmall", value: urlSmall),
-                URLQueryItem(name: "urlMedium", value: urlMedium),
-                URLQueryItem(name: "urlLarge", value: urlLarge)
+                URLQueryItem(name: "pathOrigin", value: pathOrigin),
+                URLQueryItem(name: "pathSmall", value: pathSmall),
+                URLQueryItem(name: "pathMedium", value: pathMedium),
+                URLQueryItem(name: "pathLarge", value: pathLarge)
             ]
             
             
@@ -511,7 +508,8 @@ import CryptoKit
             let (data, response) = try await session.data(for: urlRequest)
             try AppKeyIDError.checkResponse(data: data, response: response)
             
-            return true
+            self.akUser = try makeUser(data)
+            return self.akUser!
         }
         catch let error as AppKeyIDError {
             throw error
@@ -529,7 +527,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/addPasskey"
+        let url = "\(appKeyRestAddress)/api/account/addPasskey"
         
         do {
             
@@ -573,7 +571,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/addPasskeyComplete"
+        let url = "\(appKeyRestAddress)/api/account/addPasskeyComplete"
         
         do {
             
@@ -624,7 +622,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/updatePasskey"
+        let url = "\(appKeyRestAddress)/api/account/updatePasskey"
         
         do {
             
@@ -672,7 +670,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/removePasskey"
+        let url = "\(appKeyRestAddress)/api/account/removePasskey"
         
         do {
             
@@ -721,7 +719,7 @@ import CryptoKit
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/authn/user"
+        let url = "\(appKeyRestAddress)/api/account/user"
         
         do {
             
@@ -835,13 +833,13 @@ import CryptoKit
         }
     }
    
-    @MainActor public func getUploadURL(fileName:String, noCutting:Bool = false) async throws -> AKUploadUrl {
+    @MainActor public func getUploadURL(id:String, fileName:String, noCutting:Bool = false) async throws -> AKUploadUrl {
         
         guard let appKeyRestAddress = self.appKeyRestAddress else {
             throw AppKeyIDError.appKeyConfiguration
         }
 
-        let url = "\(appKeyRestAddress)/api/storage/upload?fileName=\(fileName)&noCutting=\(noCutting)"
+        let url = "\(appKeyRestAddress)/api/storage/upload?id=\(id)&fileName=\(fileName)&noCutting=\(noCutting)"
         
         do {
             
@@ -884,7 +882,9 @@ import CryptoKit
             var user = try JSONDecoder().decode(AKUser.self, from: data)
             
             if let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
-                user.accessToken = json["access-token"] as? String 
+                
+                print("make user \(json)")
+                user.accessToken = json["access-token"] as? String
             }
             
             if let accessToken = user.accessToken {

@@ -39,7 +39,7 @@ enum UploadError: Error {
      // Unable to upload asset or save it
      case assetUploadError(Error, AKUploadItem)
      // The asset has been uploaded and saved
-     case assetUploadEnd(AKUploadUrl)
+     case assetUploadEnd(AKUploadItem)
      // The upload session has been completed
      // Parameters are the array of uploaded assets and an
      // array of failed uploads.
@@ -51,6 +51,7 @@ enum UploadError: Error {
 @available(iOS 16.0, *)
 public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
   
+     
     public static let shared = AKFileUploader()
    
     func getImageDetail(url:URL) async throws -> AKImageDetail? {
@@ -93,7 +94,7 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
           
         
           var imageData: Data?
-          
+          let callback = onUpload
           if upload.contentType == "image/jpeg" {
               imageData = uiImage.jpegData(compressionQuality: 1.0)
           }
@@ -107,40 +108,40 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
       
           
           let imageDetail = try await getImageDetail(url: url)!
-          let uploadURL = try await AppKeyIDAPI.getUploadURL(fileName: imageDetail.fileName, noCutting: notCutting)
+          let uploadURL = try await AppKeyIDAPI.getUploadURL(id: upload.id, fileName: imageDetail.fileName, noCutting: notCutting)
           
           if let data = imageData  {
               
-              onUpload(.transactionStart)
+              callback(.transactionStart)
               
-              try await uploadImageData(data, to: uploadURL.writeUrl)
+              try await uploadImageData(data, contentType: upload.contentType, to: uploadURL.writeUrl)
               
               if notCutting {
                   
-                  onUpload(.transactionEnd(uploadURL))
+                  callback(.transactionEnd(uploadURL))
                   return
               }
               
               
               if let writeUrlSmall = uploadURL.writeUrlSmall{
                   if let small = upload.uiImage?.imageCut(cutSize: 300)?.pngData(){
-                      try await uploadImageData(small, to: writeUrlSmall)
+                      try await uploadImageData(small, contentType: upload.contentType, to: writeUrlSmall)
                   }
               }
               
               if let writeUrlMedium = uploadURL.writeUrlMedium{
                   if let medium = upload.uiImage?.imageCut(cutSize: 600)?.pngData() {
-                      try await uploadImageData(medium, to: writeUrlMedium)
+                      try await uploadImageData(medium, contentType: upload.contentType, to: writeUrlMedium)
                   }
               }
               
               if let writeUrlLarge = uploadURL.writeUrlLarge{
                   if let large = upload.uiImage?.imageCut(cutSize: 900)?.pngData(){
-                      try await uploadImageData(large, to: writeUrlLarge)
+                      try await uploadImageData(large, contentType: upload.contentType, to: writeUrlLarge)
                   }
               }
               
-              onUpload(.transactionEnd(uploadURL))
+              callback(.transactionEnd(uploadURL))
               
           }
           else {
@@ -157,7 +158,7 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
     }
      
     
-    func uploadImageData(_ imageData: Data, to writeUrl: String) async throws {
+    func uploadImageData(_ imageData: Data, contentType:String, to writeUrl: String) async throws {
       
       
           let fileSize = imageData.count
@@ -166,7 +167,7 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
           
           // Required headers
           request.setValue("BlockBlob", forHTTPHeaderField: "x-ms-blob-type")
-          request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
+          request.setValue(contentType, forHTTPHeaderField: "Content-Type")
           request.setValue(String(fileSize), forHTTPHeaderField: "Content-Length")
           request.setValue("2023-11-03", forHTTPHeaderField: "x-ms-version") // Example API version
           request.setValue(Date().description(with: .current), forHTTPHeaderField: "x-ms-date") // Current UTC date
