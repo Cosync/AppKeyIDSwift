@@ -8,24 +8,6 @@ import Foundation
 import SwiftUI
 import PhotosUI
  
-
-enum UploadError: Error {
-    case invalidImage
-    case uploadFail
-    
-    public var message: String {
-        switch self {
-        case .invalidImage:
-            return "Your image is invalid"
-        case .uploadFail:
-            return "Whoop! Something went wrong while uploading to server"
-            
-        }
-    
-    }
-}
- 
-
  public enum AKUploadState {
      // The upload session is starting. Called once.
      case transactionStart
@@ -45,15 +27,17 @@ enum UploadError: Error {
      // array of failed uploads.
      case transactionEnd(AKUploadUrl)
  }
- 
-
+  
 
 @available(iOS 16.0, *)
-public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
-  
-     
+@MainActor public class AKFileUploader:NSObject, @preconcurrency URLSessionTaskDelegate {
+    
+    typealias ProgressHandler = (Double) -> Void
+    var progressHandlersByTaskID = [Int: ProgressHandler]()
+    
     public static let shared = AKFileUploader()
-   
+    public var progress: Double? = 0
+    
     func getImageDetail(url:URL) async throws -> AKImageDetail? {
         var detail:AKImageDetail?
         
@@ -75,6 +59,26 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
         }
         
         return detail
+    }
+    
+    public func getFileUploadDetail(upload:AKUploadItem, notCutting:Bool = false ) async throws -> AKUploadUrl {
+        do{
+            guard let url = URL(string: upload.src) else {
+                throw UploadError.invalidImage
+            }
+            
+            guard let uiImage = upload.uiImage else {
+                throw UploadError.invalidImage
+            }
+           
+            let imageDetail = try await getImageDetail(url: url)!
+            let uploadURL = try await AppKeyIDAPI.getUploadURL(id: upload.id, fileName: imageDetail.fileName, noCutting: notCutting)
+            return uploadURL
+        }
+        catch{
+            throw UploadError.invalidImage
+        }
+        
     }
     
    
@@ -112,13 +116,13 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
           
           if let data = imageData  {
               
-              callback(.transactionStart)
+              onUpload(.transactionStart)
               
               try await uploadImageData(data, contentType: upload.contentType, to: uploadURL.writeUrl)
               
               if notCutting {
                   
-                  callback(.transactionEnd(uploadURL))
+                  onUpload(.transactionEnd(uploadURL))
                   return
               }
               
@@ -141,7 +145,7 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
                   }
               }
               
-              callback(.transactionEnd(uploadURL))
+              onUpload(.transactionEnd(uploadURL))
               
           }
           else {
@@ -172,7 +176,8 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
           request.setValue("2023-11-03", forHTTPHeaderField: "x-ms-version") // Example API version
           request.setValue(Date().description(with: .current), forHTTPHeaderField: "x-ms-date") // Current UTC date
           
-          
+       
+        
           let (_, response) = try await URLSession.shared.upload(for: request, from: imageData, delegate: self)
           guard let taskResponse = response as? HTTPURLResponse else {
               print("uploadImageData no response")
@@ -181,10 +186,19 @@ public final class AKFileUploader:NSObject, URLSessionTaskDelegate {
           
           
   }
+    
+     
   
     public func urlSession(_ session: URLSession, task: URLSessionTask, didSendBodyData bytesSent: Int64, totalBytesSent: Int64, totalBytesExpectedToSend: Int64) {
       
-      let progress = Float(totalBytesSent) / Float(totalBytesExpectedToSend)
+      //let progress = Float(totalBytesSent) / Float(totalBytesExpectedToSend)
+        
+      
+        // Calculate and report the progress
+       guard totalBytesExpectedToSend > 0 else { return }
+       let progress = Double(totalBytesSent) / Double(totalBytesExpectedToSend)
+       progressHandlersByTaskID[task.taskIdentifier]?(progress)
+
       print("urlSession progress = \(progress)")
      
   }

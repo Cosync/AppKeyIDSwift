@@ -45,7 +45,7 @@ extension String {
 
 extension UIImage {
    
-   var csMimeType: String? {
+    public var csMimeType: String? {
        get {
            return self.value(forKey: "csmimetype") as? String
        }
@@ -55,7 +55,7 @@ extension UIImage {
        }
    }
    
-   func imageCut(cutSize: CGFloat) -> UIImage? {
+   public func imageCut(cutSize: CGFloat) -> UIImage? {
        
        let sizeOriginal = self.size
        if sizeOriginal.width > 0 && sizeOriginal.height > 0 {

@@ -254,3 +254,22 @@ public struct AKUploadItem {
         self.noCut = noCut ?? false
     }
 }
+
+
+
+public enum UploadError: Error {
+   case invalidImage
+   case uploadFail
+   
+   public var message: String {
+       switch self {
+       case .invalidImage:
+           return "Your image is invalid"
+       case .uploadFail:
+           return "Whoop! Something went wrong while uploading to server"
+           
+       }
+   
+   }
+}
+
