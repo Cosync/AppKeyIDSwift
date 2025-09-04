@@ -111,35 +111,14 @@ public enum ImageUploadState {
         let imageDetail = try await getImageDetail(url: url)!
         let uploadURL = try await AppKeyIDAPI.getUploadURL(id: upload.id, fileName: imageDetail.fileName, noCutting: notCutting)
         
-        let taskId = try await uploadImageData(imageData!, async: false, contentType: upload.contentType, to: uploadURL.writeUrl, progressHandler: progressHandler)
+        let taskId = try await uploadImageData(imageData!, contentType: upload.contentType, to: uploadURL.writeUrl, progressHandler: progressHandler)
         delegate.uploadUrl = uploadURL
         
         if notCutting {
             delegate.progressHandlersByTaskID[taskId]?(.transactionEnd(uploadURL))
         }
         return taskId
-        
-        /*
-        if let writeUrlSmall = uploadURL.writeUrlSmall{
-            if let small = upload.uiImage?.imageCut(cutSize: 300)?.pngData(){
-                let _ = try await uploadImageData(small, async: true, contentType: upload.contentType, to: writeUrlSmall, progressHandler: {_ in})
-            }
-        }
-        
-        if let writeUrlMedium = uploadURL.writeUrlMedium{
-            if let medium = upload.uiImage?.imageCut(cutSize: 600)?.pngData() {
-                let _ = try await uploadImageData(medium, async: true, contentType: upload.contentType, to: writeUrlMedium, progressHandler: {_ in})
-            }
-        }
-        
-        if let writeUrlLarge = uploadURL.writeUrlLarge{
-            if let large = upload.uiImage?.imageCut(cutSize: 900)?.pngData(){
-                let _ = try await uploadImageData(large, async: true, contentType: upload.contentType, to: writeUrlLarge, progressHandler: {_ in})
-                
-                delegate.progressHandlersByTaskID[taskId]?(.transactionEnd(uploadURL))
-            }
-        }
-        */
+         
     }
     
     func getImageDetail(url:URL) async throws -> AKImageDetail? {
@@ -152,10 +131,6 @@ public enum ImageUploadState {
             if let file = resources.first {
                 let options = PHContentEditingInputRequestOptions()
                 options.isNetworkAccessAllowed = true
-//                let imageManager = PHImageManager.default()
-//                let phOptions = PHImageRequestOptions()
-//                phOptions.resizeMode = PHImageRequestOptionsResizeMode.exact
-//                phOptions.isSynchronous = true;
                 
                 let fileName = file.originalFilename.filter({$0 != " "})
                 detail = AKImageDetail(fileName: fileName, localIdentifier: phAsset.localIdentifier, pixelWidth: phAsset.pixelWidth, pixelHeight: phAsset.pixelHeight, contentType: fileName.mimeType())
@@ -165,7 +140,7 @@ public enum ImageUploadState {
         return detail
     }
     
-    public func uploadImageData(_ imageData: Data, async:Bool, contentType:String, to writeUrl: String,  progressHandler: @escaping UploadDelegate.ProgressHandler) async throws -> Int {
+    public func uploadImageData(_ imageData: Data, contentType:String, to writeUrl: String,  progressHandler: @escaping UploadDelegate.ProgressHandler) async throws -> Int {
       
       
         let fileSize = imageData.count
@@ -179,27 +154,20 @@ public enum ImageUploadState {
         request.setValue("2023-11-03", forHTTPHeaderField: "x-ms-version") // Example API version
         request.setValue(Date().description(with: .current), forHTTPHeaderField: "x-ms-date") // Current UTC date
            
-        if async {
-            let (_, response) = try await URLSession.shared.upload(for: request, from: imageData, delegate: self)
-            guard let taskResponse = response as? HTTPURLResponse else {
-                print("uploadImageData no response")
-                throw UploadError.uploadFail
-            }
-        }
-        else {
-            let task = session.uploadTask(with: request, from: imageData)
-            
-            // Store the progress handler using the task's identifier
-            delegate.progressHandlersByTaskID[task.taskIdentifier] = progressHandler
-            
-            delegate.progressHandlersByTaskID[task.taskIdentifier]?(.assetStart(task.taskIdentifier))
-            
-            // Start the upload
-            task.resume()
-            
-            return task.taskIdentifier
-        }
-        return 0
+        
+        let task = session.uploadTask(with: request, from: imageData)
+        
+        // Store the progress handler using the task's identifier
+        delegate.progressHandlersByTaskID[task.taskIdentifier] = progressHandler
+        
+        delegate.progressHandlersByTaskID[task.taskIdentifier]?(.assetStart(task.taskIdentifier))
+        
+        // Start the upload
+        task.resume()
+        
+        return task.taskIdentifier
+         
+        
   }
     
     
@@ -264,8 +232,6 @@ public enum ImageUploadState {
         delegate.progressHandlersByTaskID[taskId] = nil
     }
     
-    
-     
 }
 
 
