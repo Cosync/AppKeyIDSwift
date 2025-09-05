@@ -520,6 +520,48 @@ import CryptoKit
     }
     
     
+    @MainActor public func removeProfileAvatar() async throws -> AKUser {
+        
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+
+        let url = "\(appKeyRestAddress)/api/account/removeProfileAvatar"
+        do {
+            
+            
+            var requestBodyComponents = URLComponents()
+            requestBodyComponents.queryItems = [ ]
+            
+            
+            let config = URLSessionConfiguration.default
+            let session = URLSession(configuration: config)
+            let url = URL(string: url)!
+            
+            var urlRequest = URLRequest(url: url)
+            urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+            urlRequest.httpMethod = "POST"
+            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            
+            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            
+            self.akUser = try makeUser(data)
+            return self.akUser!
+        }
+        catch let error as AppKeyIDError {
+            throw error
+        }
+        catch {
+            throw error
+        }
+    }
+    
+    
+    
     
     @MainActor public func addPasskey() async throws -> AKSignupChallenge {
         
