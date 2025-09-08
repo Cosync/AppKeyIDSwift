@@ -203,6 +203,11 @@ public struct AKUser:Codable {
     public let avatar:Avatar?
     public let createdAt: String?
     public let updatedAt: String?
+    
+    
+    public var name: String {
+        return "\(firstName) \(lastName)"
+    }
 }
 
 
