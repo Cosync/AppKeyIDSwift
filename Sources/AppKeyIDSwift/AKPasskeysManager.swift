@@ -49,7 +49,7 @@ public class AKPasskeysManager:NSObject, ObservableObject, ASAuthorizationContro
         guard let authorizationError = error as? ASAuthorizationError else {
             print("Unexpected authorization error: \(error.localizedDescription)")
             
-            errorResponse = "\(Date.now): \(error.localizedDescription)"
+            errorResponse = "\(getTime()): \(error.localizedDescription)"
             
             return
         }
@@ -63,7 +63,7 @@ public class AKPasskeysManager:NSObject, ObservableObject, ASAuthorizationContro
                 errorResponse = error["NSLocalizedFailureReason"] as? String
             }
             else {
-                errorResponse = "\(Date.now): User Canceled."
+                errorResponse = "\(getTime()): Login Canceled."
             }
             
             status = "canceled"
@@ -73,11 +73,24 @@ public class AKPasskeysManager:NSObject, ObservableObject, ASAuthorizationContro
             let error = (error as NSError).userInfo
             
             let msg = error["NSLocalizedFailureReason"] as? String
-            errorResponse = "\(Date.now): \(msg ?? "Invalid Authentication Key")"
+            errorResponse = "\(getTime()): \(msg ?? "Invalid Authentication Key")"
             status = "error"
         }
         
         //Alert.generic(viewController: presentingVC, message: "", error: error as NSError)
+    }
+    
+    func getTime() -> String {
+        let now = Date.now
+        let calendar = Calendar.current
+        let timeComponents = calendar.dateComponents([.hour, .minute, .second], from: now)
+        var time = ""
+        if let hour = timeComponents.hour,
+           let minute = timeComponents.minute,
+           let second = timeComponents.second {
+            time = "\(hour):\(minute):\(second)"
+        }
+        return time
     }
     
     public func presentationAnchor(for controller: ASAuthorizationController) -> ASPresentationAnchor {

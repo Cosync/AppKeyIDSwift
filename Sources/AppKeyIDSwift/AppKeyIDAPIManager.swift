@@ -87,8 +87,6 @@ import CryptoKit
             try AppKeyIDError.checkResponse(data: data, response: response)
             
             let result = try JSONDecoder().decode(AKSignupChallenge.self, from: data)
-           
-            
             return result
             
             
@@ -291,6 +289,141 @@ import CryptoKit
         }
     }
     
+    
+    
+    // Singup into AppKey with Apple or Google
+    @MainActor public func socialSignup(_ token: String, email:String, provider:String, firstName: String, lastName: String) async throws -> AKSignupChallenge {
+        
+       
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+        
+        let config = URLSessionConfiguration.default
+
+        let session = URLSession(configuration: config)
+            
+        let url = URL(string: "\(appKeyRestAddress)/api/account/socialSignup")!
+    
+        var urlRequest = URLRequest(url: url)
+        urlRequest.httpMethod = "POST"
+        var requestBodyComponents = URLComponents()
+        
+        requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                        URLQueryItem(name: "provider", value: provider),
+                                        URLQueryItem(name: "firstName", value: firstName),
+                                        URLQueryItem(name: "lastName", value: lastName),
+                                        URLQueryItem(name: "email", value: email)]
+        
+        
+       
+        
+        urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+        
+        do {
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            let result = try JSONDecoder().decode(AKSignupChallenge.self, from: data)
+            return result
+            
+        }
+        catch let error as AppKeyIDError {
+            throw error
+        }
+        catch {
+            throw error
+        }
+
+    }
+    
+    
+    @MainActor public func socialSignupComplete(email:String, attest:AKAttestation) async throws -> AKUser {
+        
+       
+        
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+
+        let url = "\(appKeyRestAddress)/api/account/socialSignupComplete"
+        do {
+            
+            let attetstRsponse = "{\"attestationObject\": \"\(attest.response.attestationObject)\", \"clientDataJSON\": \"\(attest.response.clientDataJSON)\"}"
+            var requestBodyComponents = URLComponents()
+            requestBodyComponents.queryItems = [URLQueryItem(name: "email", value: email),
+                                                URLQueryItem(name: "id", value: attest.id),
+                                                URLQueryItem(name: "response", value: attetstRsponse )
+            ]
+            let config = URLSessionConfiguration.default
+            let session = URLSession(configuration: config)
+            let url = URL(string: url)!
+            
+            var urlRequest = URLRequest(url: url)
+            urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+           
+            urlRequest.httpMethod = "POST"
+            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+            
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            
+            self.akUser = try makeUser(data)
+            return self.akUser!
+            
+        }
+        catch let error as AppKeyIDError {
+            throw error
+        }
+        catch {
+            throw error
+        }
+    }
+    
+    
+    // Social Login into AppKey
+    @MainActor public func socialLogin(_ token: String, provider: String) async throws -> AKLoginChallenge{
+         
+        guard let appKeyRestAddress = self.appKeyRestAddress else {
+            throw AppKeyIDError.appKeyConfiguration
+        }
+        
+        do {
+            
+            var requestBodyComponents = URLComponents()
+            requestBodyComponents.queryItems = [URLQueryItem(name: "token", value: token),
+                                                URLQueryItem(name: "provider", value: provider)]
+            
+            let config = URLSessionConfiguration.default
+            let session = URLSession(configuration: config)
+            
+            let url = URL(string: "\(appKeyRestAddress)/api/account/socialLogin")!
+            var urlRequest = URLRequest(url: url)
+            urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
+            urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
+            
+            urlRequest.httpMethod = "POST"
+            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
+            
+            let (data, response) = try await session.data(for: urlRequest)
+            try AppKeyIDError.checkResponse(data: data, response: response)
+            
+            let result = try JSONDecoder().decode(AKLoginChallenge.self, from: data)
+            return result
+         
+        }
+        catch let error as AppKeyIDError {
+             throw error
+        }
+        catch {
+            throw error
+        }
+
+
+    }
     
     
     // user must do login ceremony process to get new access token before call this deleteAccount
@@ -573,7 +706,7 @@ import CryptoKit
         
         do {
             
-            var requestBodyComponents = URLComponents()
+            let requestBodyComponents = URLComponents()
             
             let config = URLSessionConfiguration.default
             let session = URLSession(configuration: config)
@@ -885,8 +1018,6 @@ import CryptoKit
         
         do {
             
-            var requestBodyComponents = URLComponents()
-            
             let config = URLSessionConfiguration.default
             let session = URLSession(configuration: config)
             let url = URL(string: url)!
@@ -896,9 +1027,6 @@ import CryptoKit
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
             urlRequest.httpMethod = "GET"
             urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
-            
-            urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
-            
             
             let (data, response) = try await session.data(for: urlRequest)
             try AppKeyIDError.checkResponse(data: data, response: response)

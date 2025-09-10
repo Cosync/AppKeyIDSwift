@@ -35,6 +35,7 @@ public struct AKLoginChallenge:Decodable {
     public var timeout: Int
     public var userVerification: String
     public var requireAddPasskey:Bool?
+    public var email: String?
 }
 
 public struct AKSingUpUser:Codable {
