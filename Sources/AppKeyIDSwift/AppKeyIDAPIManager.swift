@@ -445,9 +445,9 @@ import CryptoKit
             urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
             urlRequest.httpMethod = "POST"
-            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
             
-            
+            print(self.accessToken)
             let (data, response) = try await session.data(for: urlRequest)
             try AppKeyIDError.checkResponse(data: data, response: response)
             
@@ -545,6 +545,9 @@ import CryptoKit
             try AppKeyIDError.checkResponse(data: data, response: response) 
             
             self.akUser = try makeUser(data)
+            
+            
+            
             return self.akUser!
             
              
@@ -560,7 +563,7 @@ import CryptoKit
     
     
     
-    @MainActor public func updateProfile(firstName:String, lastName:String, country:String? = nil) async throws -> AKUser {
+    @MainActor public func updateProfile(firstName:String, lastName:String, company:String? = nil, country:String? = nil) async throws -> AKUser {
         
         guard let appKeyRestAddress = self.appKeyRestAddress else {
             throw AppKeyIDError.appKeyConfiguration
@@ -574,6 +577,7 @@ import CryptoKit
             requestBodyComponents.queryItems = [
                 URLQueryItem(name: "firstName", value: firstName),
                 URLQueryItem(name: "lastName", value: lastName),
+                URLQueryItem(name: "company", value: company),
                 URLQueryItem(name: "country", value: country)
             ]
             
@@ -586,7 +590,7 @@ import CryptoKit
             urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
             urlRequest.httpMethod = "POST"
-            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
             
             urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
             
@@ -634,7 +638,7 @@ import CryptoKit
             urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
             urlRequest.httpMethod = "POST"
-            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
             
             urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
             
@@ -675,7 +679,7 @@ import CryptoKit
             urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
             urlRequest.httpMethod = "POST"
-            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
             
             urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
             
@@ -946,7 +950,7 @@ import CryptoKit
             var urlRequest = URLRequest(url: url)
             urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
-            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
             urlRequest.httpMethod = "GET"
             
             let (data, response) = try await session.data(for: urlRequest)
@@ -988,7 +992,7 @@ import CryptoKit
             var urlRequest = URLRequest(url: url)
             urlRequest.addValue("application/x-www-form-urlencoded", forHTTPHeaderField: "Content-Type")
             urlRequest.addValue("application/json", forHTTPHeaderField: "Accept")
-            urlRequest.allHTTPHeaderFields = ["access-token": accessToken]
+            urlRequest.allHTTPHeaderFields = ["access-token": self.accessToken]
             urlRequest.httpMethod = "POST"
             urlRequest.httpBody = requestBodyComponents.query?.data(using: .utf8)
             
@@ -1052,14 +1056,14 @@ import CryptoKit
             var user = try JSONDecoder().decode(AKUser.self, from: data)
             
             if let json = (try? JSONSerialization.jsonObject(with: data, options: JSONSerialization.ReadingOptions.mutableContainers)) as? [String: Any] {
-                
-                print("make user \(json)")
                 user.accessToken = json["access-token"] as? String
             }
             
             if let accessToken = user.accessToken {
                 self.accessToken = accessToken
             }
+            
+            print(self.accessToken)
             
             return user
             
