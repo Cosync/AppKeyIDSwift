@@ -147,10 +147,8 @@ struct AKLoginComplete:Decodable {
  
 public struct AKUploadUrl:Codable, Sendable {
     
-    public let id:String
-    
+    public let id:String 
     public let writeUrl:String
-    public let readUrl:String
     public let path:String
     
     public let writeUrlSmall:String?
